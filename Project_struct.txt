@@ -1,0 +1,26 @@
+HireLog/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+│
+├── lambdas/
+│   ├── auth/
+│   │   ├── login.py
+│   │   └── register.py
+│   │
+│   ├── jobs/
+│   │   ├── create_job.py
+│   │   ├── get_jobs.py
+│   │   └── update_job.py
+│   │
+│   └── scheduler/
+│       └── ghost_checker.py
+│
+├── shared/
+│   ├── auth_helper.py
+│   └── db.py
+│
+├── .env
+├── .gitignore
+├── requirements.txt
+└── README.md

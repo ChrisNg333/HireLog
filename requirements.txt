@@ -1,0 +1,14 @@
+# AWS SDK — talks to DynamoDB, Lambda, and all other AWS services
+boto3==1.34.69
+
+# JWT — creates and verifies login tokens
+PyJWT==2.8.0
+
+# Password hashing — never store plain passwords
+bcrypt==4.1.2
+
+# Input validation — checks request data shape before touching the DB
+pydantic==2.6.4
+
+# Environment variables — loads .env file locally during development
+python-dotenv==1.0.1
