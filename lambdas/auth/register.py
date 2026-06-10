@@ -18,7 +18,7 @@ import bcrypt
 from shared.db import get_user_by_email, put_user
 from shared.auth_helper import create_token, success, error
 
-def hander(event, context):
+def handler(event, context):
     #=========== Parse and Validate Body ============#
     try:
         body = json.loads(event.get("body") or "{}")

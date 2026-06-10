@@ -74,14 +74,14 @@ def update_job(job_id:str, user_id:str, updates:dict) -> dict:
     # Build DynamoDB update expression dynamically
     expression_parts = []
     expression_names  = {}
-    exprression_values = {}
+    expression_values = {}
 
     for i, (field,value) in enumerate(safe_updates.items()):
         placeholder_name  = f"#f{i}"
         placeholder_value = f":v{i}"
         expression_parts.append(f"{placeholder_name} = {placeholder_value}")
         expression_names[placeholder_name] = field
-        exprression_values[placeholder_value] = value
+        expression_values[placeholder_value] = value
 
     update_expression = "SET "+ ", ".join(expression_parts)
 
@@ -90,9 +90,8 @@ def update_job(job_id:str, user_id:str, updates:dict) -> dict:
             Key={"job_id": job_id, "user_id":user_id},
             UpdateExpression = update_expression,
             ExpressionAttributeNames = expression_names,
-            ExpressionAttributeValues = exprression_values,
+            ExpressionAttributeValues = {**expression_values, ":uid" : user_id},
             ConditionExpression = "user_id = :uid",      #users can only edit their own jobs
-            ExpressionAttributeValues = {**exprression_values, ":uid" : user_id},
             ReturnValues = "ALL_NEW"
         )
         return response.get("Attributes", {})
