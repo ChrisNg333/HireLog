@@ -1,0 +1,67 @@
+# ============================================================
+# HireLog — AWS SAM Infrastructure Template
+# ============================================================
+# This file IS the cloud infrastructure. SAM reads it and
+# creates/updates a CloudFormation stack that provisions:
+#
+#   - 2 DynamoDB tables  (Users, Jobs)
+#   - 5 Lambda functions (register, login, create_job, get_jobs, update_job)
+#   - 1 Lambda function  (ghost_checker — no API route, EventBridge only)
+#   - 1 API Gateway      (HTTP API, auto-created by SAM from the events below)
+#   - 1 EventBridge rule (daily cron trigger for ghost_checker)
+#   - IAM roles          (auto-created per Lambda by SAM)
+#
+# DEPLOY:
+#   sam build
+#   sam deploy --guided   ← first time (creates samconfig.toml)
+#   sam deploy            ← every time after
+# ============================================================
+
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31   # tells CloudFormation this is a SAM template
+
+Description: HireLog — Serverless job application tracker
+
+#=============== Parameter =================#
+
+Parameter:
+ JwtSecret:
+  Type: String
+  NoEcho: true    #never show in console or log 
+  Description: secret key uesd to sign and verify 
+
+ AllowedOrigin:
+  Type: String
+  Default : "*"
+  Description: CORS allowed origin
+
+#========= Global =================#
+#Anything here is inherited by ALL Lambda functions below.
+#saves repeating the same block 6 times.
+
+Globals:
+ Function:
+  Runtime: python3.12
+  Timeout: 10   #seconds
+  MemorySize: 128    #MByte
+  CodeUri: .
+  Layers:
+   - !Ref DependenciesLayer # shared pip packages (boto3, PyJWT, bcrypt, etc.)
+  
+  Environment:
+   Variables:
+    JWT_SECRET: !Ref JwtSecret
+    ALLOWED_ORIGIN : !Ref AllowedOrigin
+    AWS_REGION_NAME: !Ref AWS::Region
+    USER_TABLE_NAME: !Ref UsersTable
+    JOBS_TABLE_NAME: !Ref JobsTable
+
+
+
+
+
+
+
+
+  
