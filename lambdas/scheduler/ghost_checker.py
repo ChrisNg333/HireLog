@@ -10,7 +10,7 @@ PURPOSE: Automatically marks job applications as "ghosted" if there's been no up
  
 FLOWS:
   1. Scan all jobs from DynamoDB
-  2. Filter for jobs in "applied" or "interviewing" with updated_at older than 21 days
+  2. Filter for jobs in "applied" or "interviewing" with updated_at older than 20 days
   3. Update each stale job's status to "ghosted"
   4. Return a count summary (EventBridge doesn't use the response but it's good for logs)
 """
@@ -20,7 +20,7 @@ from shared.db import scan_all_jobs, update_job
 from botocore.exceptions import ClientError
 
 STALE_STATUSES       = {"applied", "interviewing"}
-GHOST_THRESHOLD_DAYS = 10
+GHOST_THRESHOLD_DAYS = 20
 
 def handler(event, context):
     now = datetime.now(timezone.utc)
@@ -28,7 +28,7 @@ def handler(event, context):
 
     all_job = scan_all_jobs()
     ghosted = []
-    error = []
+    errors = []
 
     for job in all_job:
         if job.get("status") not in STALE_STATUSES:
@@ -57,14 +57,14 @@ def handler(event, context):
                 ghosted.append(job["job_id"])
                 print(f"[ghost_checker] Marked as ghosted: {job['job_id']} (company: {job.get('company')})")
             except ClientError as e:
-                error.append(job["job_id"])
+                errors.append(job["job_id"])
                 print(f"[ghost_checker] Failed to update {job['job_id']}: {e.response['Error']['Message']}")
  
     
     summary = {
         "checked" : len(all_job),
         "ghosted" : len(ghosted),
-        "errors": len(error),
+        "errors": len(errors),
         "ghosted_ids": ghosted
     }
 

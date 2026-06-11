@@ -54,7 +54,7 @@ Globals:
     JWT_SECRET: !Ref JwtSecret
     ALLOWED_ORIGIN : !Ref AllowedOrigin
     AWS_REGION_NAME: !Ref AWS::Region
-    USER_TABLE_NAME: !Ref UsersTable
+    USERS_TABLE_NAME: !Ref UsersTable
     JOBS_TABLE_NAME: !Ref JobsTable
 
 
