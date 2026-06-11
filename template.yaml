@@ -58,10 +58,201 @@ Globals:
     JOBS_TABLE_NAME: !Ref JobsTable
 
 
-
-
-
-
-
-
+#======== Resources ============#
   
+Resources:
+ #---------- lambda layer (shared dependencies)------
+ DependenciesLayer:
+  Type: AWS::Serverless::LayerVersion
+  Properties:
+   LayerName: hirelog-dependencies
+   Description: PyJWT, bcrypt, boto3, pydantic, python-dotenv
+   ContentUri: .
+   CompatibleRuntimes:
+    - python3.12
+   RetentionPolicy: Delete  #old layer clean up auto
+  Metadata:
+   BuildMethod: python3.12  #tell SAM to pip install req.txt here
+
+
+ #--------- AUTH lambdas-------------
+ RegisterFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+   FunctionName: hirelog-register
+   Handler: lambdas/auth/register.handler
+   Description: POST /auth/register - create acc and return JWT
+   Policies:
+    - DynamoDBCrudPolicy:
+       TableName: !Ref UsersTable
+   Events:
+    ApiEvent:
+     Type: HttpApi    #create API Gateway http
+     Properties:
+      Path: /auth/register
+      Mothod: POST
+      ApiId: !Ref HireLogApi
+
+ LoginFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+   FunctionName: hirelog-login
+   Handler: lambdas/auth/login.handler
+   Description: POST /auth/login - verify pass and return JWT
+   Policies:
+    - DynamoDBReadPolicy:
+       TableName: !Ref UsersTable
+
+   Events:
+    ApiEvent:
+     Type: HttpApi
+     Properties:
+      Path: /auth/login
+      Method: POST
+      ApiId: !Ref HireLogApi
+
+
+ #-------- Jobs Lambdas -----------
+ CreateJobFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+   FunctionName: hirelog-create-job
+   Handler: lambdas/jobs/create_job.handler
+   Description: POST /jobs — create a new job application
+   Policies:
+    - DynamoDBCrudPolicy:
+       TableName: !Ref JobsTable
+   Events:
+    ApiEvent:
+     Type: HttpApi
+     Properties:
+      Path: /jobs
+      Method: POST
+      ApiId: !Ref HireLogApi
+ 
+ GetJobsFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+   FunctionName: hirelog-get-jobs
+   Handler: lambdas/jobs/get_jobs.handler
+   Description: GET /jobs — fetch all job applications for the authed user
+   Policies:
+    - DynamoDBReadPolicy:
+       TableName: !Ref JobsTable
+   Events:
+    ApiEvent:
+     Type: HttpApi
+     Properties:
+      Path: /jobs
+      Method: GET
+      ApiId: !Ref HireLogApi
+
+ UpateJobsFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+   FunctionName: hirelog-update-jobs
+   Handler: lambdas/jobs/update_jobs.handler
+   Description: PATCH /jobs/{job_id} — partial update on a job application
+   Policies:
+    - DynamoDBCrudPolicy:
+       TableName: !Ref JobsTable
+   Events:
+    ApiEvent:
+     Type: HttpApi
+     Properties:
+      Path: /jobs/{job_id}
+      Method: PATCH
+      ApiId: !Ref HireLogApi
+
+ #------ Scheduler Lambda ------------
+ GhostCheckeFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+   FunctionName: hirelog-ghost-ghost_checker
+   Handler: lambdas/scheduler/ghost_checker.handler
+   Description: Daily job — marks stale applications as "ghosted"
+   Timeout: 60    
+   Policies:
+    - DynamoDBCrudPolicy:
+       TableName: !Ref JobsTable
+   Events:
+    DailyTrigger:
+     Type: ScheduleV2     #EventBridge Scheduler
+
+     Properties:
+      ScheduleExpression: "cron(0 9 * * ? *)" # 9:00 am UTC daily 
+      Description: Daily ghost job checker 
+
+ #========= API Gateway===================
+ HireLogApi:
+  Type: AWS::Serverless::HttpApi
+  Properties:
+   StageName: prod
+   CorsConfiguration:
+    AllowOrigins:
+     - !Ref AllowedOrigin
+    AllowHeaders:
+     - Content-Type
+     - Authorization
+    AllowMethods:
+     - GET
+     - POST
+     - PATCH
+     - OPTIONS
+
+ #============== DynamoDB ==============
+ UsersTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+   TableName: hirelog-users
+   BillingMode: PAY_PER_REQUEST
+
+   AttributeDefintions:
+    - AttributeName: email
+      AttributeType: S
+
+   KeySchema:
+    - AttributeName: email
+      KeyType: HASH
+
+ 
+
+ JobsTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+   TableName: hirelog-jobs
+   BillingMode: PAY_PER_REQUEST
+   AttributeDefintions:
+    - AttributeName: job_id
+      AttributeType: S
+    - AttributeName: user_id
+      AttributeType: S
+
+   KeySchema:
+    - AttributeName: job_id
+      KeyType: HASH
+   GlobalSecondaryIndexes:
+    - IndexName: user_id-index
+      KeySchema:
+       - AttributeName: user_id
+         KeyType: HASH
+
+      Projection:
+       ProjectionType: ALL
+
+
+# ============= Output =================#
+
+Outputs:
+ ApiBaseUrl:
+  Description: Base URL for HireLog API 
+  Value: !Sub "https://${HireLogApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+
+
+UsersTableName:
+ Description: DynamoDB User table IndexName
+ Value: !Ref UsersTable
+
+JobsTableName:
+ Description: DynamoDB Jobs table name 
+ Value: !Ref JobsTable
