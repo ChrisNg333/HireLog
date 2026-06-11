@@ -52,7 +52,7 @@ def handler(event, context):
                 update_job(
                     job_id = job["job_id"],
                     user_id = job["user_id"],
-                    update = {"status": "ghosted"}
+                    updates = {"status": "ghosted"}
                 )
                 ghosted.append(job["job_id"])
                 print(f"[ghost_checker] Marked as ghosted: {job['job_id']} (company: {job.get('company')})")

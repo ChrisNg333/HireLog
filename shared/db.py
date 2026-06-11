@@ -87,7 +87,7 @@ def update_job(job_id:str, user_id:str, updates:dict) -> dict:
 
     try:
         response=JOBS_TABLE.update_item(
-            Key={"job_id": job_id, "user_id":user_id},
+            Key={"job_id": job_id},
             UpdateExpression = update_expression,
             ExpressionAttributeNames = expression_names,
             ExpressionAttributeValues = {**expression_values, ":uid" : user_id},

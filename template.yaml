@@ -25,7 +25,7 @@ Description: HireLog — Serverless job application tracker
 
 #=============== Parameter =================#
 
-Parameter:
+Parameters:
  JwtSecret:
   Type: String
   NoEcho: true    #never show in console or log 
@@ -90,7 +90,7 @@ Resources:
      Type: HttpApi    #create API Gateway http
      Properties:
       Path: /auth/register
-      Mothod: POST
+      Method: POST
       ApiId: !Ref HireLogApi
 
  LoginFunction:
@@ -151,7 +151,7 @@ Resources:
   Type: AWS::Serverless::Function
   Properties:
    FunctionName: hirelog-update-jobs
-   Handler: lambdas/jobs/update_jobs.handler
+   Handler: lambdas/jobs/update_job.handler
    Description: PATCH /jobs/{job_id} — partial update on a job application
    Policies:
     - DynamoDBCrudPolicy:
@@ -207,7 +207,7 @@ Resources:
    TableName: hirelog-users
    BillingMode: PAY_PER_REQUEST
 
-   AttributeDefintions:
+   AttributeDefinitions:
     - AttributeName: email
       AttributeType: S
 
@@ -222,7 +222,7 @@ Resources:
   Properties:
    TableName: hirelog-jobs
    BillingMode: PAY_PER_REQUEST
-   AttributeDefintions:
+   AttributeDefinitions:
     - AttributeName: job_id
       AttributeType: S
     - AttributeName: user_id
@@ -249,10 +249,10 @@ Outputs:
   Value: !Sub "https://${HireLogApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
 
 
-UsersTableName:
- Description: DynamoDB User table IndexName
- Value: !Ref UsersTable
+ UsersTableName:
+  Description: DynamoDB User table IndexName
+  Value: !Ref UsersTable
 
-JobsTableName:
- Description: DynamoDB Jobs table name 
- Value: !Ref JobsTable
+ JobsTableName:
+  Description: DynamoDB Jobs table name 
+  Value: !Ref JobsTable
